@@ -1,28 +1,30 @@
 # Ekstraktor CRUD Matrix
+
 Tugas ETS mata kuliah **Programming Language Pragmatics**.
 
-Tool ini membaca file SQL dan menghasilkan **CRUD matrix**: tabel mana yang dibuat (**C**), dibaca (**R**), diubah (**U**), dan dihapus (**D**) oleh setiap file. 
-Hasil per file adalah gabungan seluruh statement di dalamnya. Tool juga melaporkan error sintaks dan diagnostik resolusi (alias tidak terdefinisi, kolom ambigu, dan sebagainya).
+Tool ini membaca file SQL dan menghasilkan **CRUD matrix**: tabel mana yang dibuat (**C**), dibaca (**R**), diubah (**U**), dan dihapus (**D**) oleh setiap file. Hasil per file adalah gabungan seluruh statement di dalamnya. Tool juga melaporkan error sintaks dan diagnostik resolusi (alias tidak terdefinisi, kolom ambigu, dan sebagainya).
 
 ## Anggota Kelompok
-| --- | --- | --- |
-| Nama | NIM | Fokus utama |
-| Fathimah Az-Zahra Suriawinata | 251524009 | Lexer dan parser |
-| Salwa Zaida Nasrullah | 251524030 | Resolver, analyzer, dan evaluasi |
+
+- **Fathimah Az-Zahra Suriawinata** (251524009): lexer dan parser
+- **Salwa Zaida Nasrullah** (251524030): resolver, analyzer, dan evaluasi
+
+Pengerjaan dilakukan dengan pair programming, bergantian driver dan navigator, sehingga kedua anggota memahami seluruh kode. Pembagian di atas hanya menunjukkan siapa yang memimpin tiap bagian.
 
 ## Latar Belakang
+
 Codebase awal sengaja dibuat belum lengkap dan mengandung beberapa bug. Pipeline-nya mengikuti buku *Crafting Interpreters*:
-| --- | --- | --- |
-| Tahap | Berkas | Rujukan buku |
-| Lexer | `crud/lexer.py` | Bab 4 (Scanning) |
-| Grammar dan AST | `crud/ast_nodes.py` | Bab 5 (Representing Code) |
-| Parser recursive descent | `crud/parser.py` | Bab 6 (Parsing Expressions) |
-| Resolver scope dan alias | `crud/resolver.py` | Bab 11 (Resolving and Binding) |
-| Analyzer aturan CRUD | `crud/analyzer.py` | - |
+
+- **Lexer** (`crud/lexer.py`): Bab 4 (Scanning)
+- **Grammar dan AST** (`crud/ast_nodes.py`): Bab 5 (Representing Code)
+- **Parser recursive descent** (`crud/parser.py`): Bab 6 (Parsing Expressions)
+- **Resolver scope dan alias** (`crud/resolver.py`): Bab 11 (Resolving and Binding)
+- **Analyzer aturan CRUD** (`crud/analyzer.py`): tidak ada rujukan bab
 
 Urutan pipeline tetap: **lexer → parser → resolver → analyzer**. Resolver adalah pass terpisah setelah parsing, dan analyzer bekerja di atas AST tanpa membaca teks SQL mentah.
 
 ## Yang Dikerjakan
+
 1. **Melengkapi tiga bagian yang belum selesai**
    - `TODO(T1)`: `INSERT ... SELECT` di parser.
    - `TODO(T2)`: resolusi kolom tanpa qualifier di resolver.
@@ -33,27 +35,47 @@ Urutan pipeline tetap: **lexer → parser → resolver → analyzer**. Resolver 
 5. **Melabeli `data/ground_truth.csv`** untuk `audit.sql` dan `pemeliharaan.sql` secara manual berdasarkan spesifikasi, bukan dengan menyalin output tool.
 6. **Mengevaluasi parser terhadap baseline regex** (precision dan recall) serta menganalisis kesalahan regex dan batas pendekatan.
 
+## Cara Menjalankan
+
+Butuh Python 3.10 atau lebih baru.
+
+```bash
+python -m pip install pytest
+python -m pytest
+python -m crud.cli data/sample/*.sql --detail detail.csv --kolom kolom.csv
+python -m crud.cli data/sample/audit.sql --ast
+python evaluate.py
+```
+
+Keterangan perintah:
+
+- `python -m pytest`: menjalankan semua test.
+- `python -m crud.cli ... --detail --kolom`: menghasilkan CRUD matrix, rincian per statement, dan penggunaan kolom.
+- `python -m crud.cli ... --ast`: mencetak AST dan hasil resolusi.
+- `python evaluate.py`: membandingkan parser dengan baseline regex.
+
 ## Struktur Repositori
-| Path | Isi |
-| --- | --- |
-| `SPESIFIKASI.md` | Acuan kebenaran: aturan lexer, grammar, resolver, dan CRUD |
-| `crud/` | Kode utama (lexer, AST, parser, resolver, analyzer, pipeline, CLI) |
-| `baseline/regex_extractor.py` | Pembanding berbasis regex (sengaja naif, tidak diubah) |
-| `evaluate.py` | Perhitungan precision dan recall parser vs regex |
-| `data/sample/*.sql` | Data uji |
-| `data/ground_truth.csv` | Label benar untuk evaluasi |
-| `tests/` | Test bawaan (tidak diubah) dan `test_tambahan.py` (test kami) |
-| `docs/` | Dokumen deliverable |
+
+- `SPESIFIKASI.md`: acuan kebenaran, berisi aturan lexer, grammar, resolver, dan CRUD
+- `crud/`: kode utama (lexer, AST, parser, resolver, analyzer, pipeline, CLI)
+- `baseline/regex_extractor.py`: pembanding berbasis regex (sengaja naif, tidak diubah)
+- `evaluate.py`: perhitungan precision dan recall parser vs regex
+- `data/sample/*.sql`: data uji
+- `data/ground_truth.csv`: label benar untuk evaluasi
+- `tests/`: test bawaan (tidak diubah) dan `test_tambahan.py` (test kami)
+- `docs/`: dokumen deliverable
 
 ## Dokumen
+
 - [`docs/LAPORAN_BUG.md`](docs/LAPORAN_BUG.md): satu entri per bug, lengkap dengan akar masalah.
 - [`docs/KARTU_DESAIN.md`](docs/KARTU_DESAIN.md): lima keputusan desain beserta alternatif yang ditolak.
 - [`docs/LAPORAN_AKHIR.md`](docs/LAPORAN_AKHIR.md): hasil evaluasi, analisis kesalahan regex, dan batas pendekatan.
 - [`docs/LOG_AI.md`](docs/LOG_AI.md): log penggunaan AI.
 
 ## Batasan
-Sesuai `SPESIFIKASI.md` bagian 9, hal berikut berada di luar lingkup: CTE (`WITH`), `UNION`, `MERGE`, DDL, quoted identifier, `t.*`, window function, alias kolom di `ORDER BY`, komentar bersarang, stored procedure, trigger, dan view. 
-Tool juga tidak memakai skema database, jadi semua keputusan diambil dari teks query.
+
+Sesuai `SPESIFIKASI.md` bagian 9, hal berikut berada di luar lingkup: CTE (`WITH`), `UNION`, `MERGE`, DDL, quoted identifier, `t.*`, window function, alias kolom di `ORDER BY`, komentar bersarang, stored procedure, trigger, dan view. Tool juga tidak memakai skema database; semua keputusan diambil dari teks query.
 
 ## Atribusi
+
 Struktur lexer, AST, parser, dan resolver diadaptasi dari konsep dan kode dalam *Crafting Interpreters* oleh Robert Nystrom (https://craftinginterpreters.com). Penggunaan AI dalam pengerjaan dicatat di `docs/LOG_AI.md`.
