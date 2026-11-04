@@ -35,25 +35,6 @@ Urutan pipeline tetap: **lexer → parser → resolver → analyzer**. Resolver 
 5. **Melabeli `data/ground_truth.csv`** untuk `audit.sql` dan `pemeliharaan.sql` secara manual berdasarkan spesifikasi, bukan dengan menyalin output tool.
 6. **Mengevaluasi parser terhadap baseline regex** (precision dan recall) serta menganalisis kesalahan regex dan batas pendekatan.
 
-## Cara Menjalankan
-
-Butuh Python 3.10 atau lebih baru.
-
-```bash
-python -m pip install pytest
-python -m pytest
-python -m crud.cli data/sample/*.sql --detail detail.csv --kolom kolom.csv
-python -m crud.cli data/sample/audit.sql --ast
-python evaluate.py
-```
-
-Keterangan perintah:
-
-- `python -m pytest`: menjalankan semua test.
-- `python -m crud.cli ... --detail --kolom`: menghasilkan CRUD matrix, rincian per statement, dan penggunaan kolom.
-- `python -m crud.cli ... --ast`: mencetak AST dan hasil resolusi.
-- `python evaluate.py`: membandingkan parser dengan baseline regex.
-
 ## Struktur Repositori
 
 - `SPESIFIKASI.md`: acuan kebenaran, berisi aturan lexer, grammar, resolver, dan CRUD
