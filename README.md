@@ -5,13 +5,14 @@ Tool ini membaca file SQL dan menghasilkan **CRUD matrix**: tabel mana yang dibu
 Hasil per file adalah gabungan seluruh statement di dalamnya. Tool juga melaporkan error sintaks dan diagnostik resolusi (alias tidak terdefinisi, kolom ambigu, dan sebagainya).
 
 ## Anggota Kelompok
+| --- | --- | --- |
 | Nama | NIM | Fokus utama |
 | Fathimah Az-Zahra Suriawinata | 251524009 | Lexer dan parser |
 | Salwa Zaida Nasrullah | 251524030 | Resolver, analyzer, dan evaluasi |
 
 ## Latar Belakang
 Codebase awal sengaja dibuat belum lengkap dan mengandung beberapa bug. Pipeline-nya mengikuti buku *Crafting Interpreters*:
-
+| --- | --- | --- |
 | Tahap | Berkas | Rujukan buku |
 | Lexer | `crud/lexer.py` | Bab 4 (Scanning) |
 | Grammar dan AST | `crud/ast_nodes.py` | Bab 5 (Representing Code) |
