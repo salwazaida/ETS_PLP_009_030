@@ -116,9 +116,14 @@ class Lexer:
             self._add(TokenType.OP, ch, line, col)
             return
         if ch == "<":
-            op = "<=" if self._match("=") else "<"
+            if self._match("="):
+                op = "<="
+            elif self._match(">"):
+                op = "<>"
+            else:
+                op = "<"
             self._add(TokenType.OP, op, line, col)
-            return
+            return        
         if ch == ">":
             op = ">=" if self._match("=") else ">"
             self._add(TokenType.OP, op, line, col)
@@ -176,8 +181,9 @@ class Lexer:
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
         text = self.src[start:self.pos]
-        if text in KEYWORDS:
-            self._add(TokenType.KEYWORD, text, line, col)
+        upper = text.upper()
+        if upper in KEYWORDS:
+            self._add(TokenType.KEYWORD, upper, line, col)
         else:
             self._add(TokenType.IDENT, text, line, col)
 
