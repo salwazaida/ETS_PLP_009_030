@@ -9,6 +9,26 @@ import pytest
 
 from crud.lexer import LexError, TokenType as T, tokenize
 from crud.parser import parse_sql
+from crud import ast_nodes as ast
+from crud.analyzer import analyze_statement
+from crud.resolver import Resolver
+
+
+def resolve(sql):
+    script = parse_sql(sql)
+    assert script.errors == [], script.errors
+    resolver = Resolver()
+    return script, resolver.resolve_script(script), resolver
+
+
+def kolom(node):
+    return [n for n in ast.iter_nodes(node) if isinstance(n, ast.ColumnRef)]
+
+
+def test_regresi_kolom_tanpa_qualifier_dua_tabel_ambigu():
+    script, diags, _ = resolve("SELECT id FROM a, b")
+    assert kolom(script)[0].resolved is None
+    assert [d.level for d in diags] == ["warning"] and "ambigu" in diags[0].message
 
 def test_regresi_keyword_tidak_peka_huruf():
     # Bug 1: keyword huruf kecil/campuran terbaca IDENT (SPESIFIKASI 2.2)
