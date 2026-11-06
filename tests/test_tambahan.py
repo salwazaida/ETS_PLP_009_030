@@ -144,3 +144,8 @@ def test_regresi_scope_delete_tidak_bocor_ke_statement_berikutnya():
         "DELETE FROM sesi s WHERE s.id = 1; SELECT s.id FROM pengguna u")
     assert resolver.scope is None
     assert [d.level for d in diags] == ["error"] and "'s'" in diags[0].message
+
+def test_regresi_subquery_di_update_adalah_read():
+    script = parse_sql("UPDATE a SET x = (SELECT MAX(y) FROM b) "
+                       "WHERE id IN (SELECT id FROM c)")
+    assert analyze_statement(script.statements[0]) == {"a": {"U"}, "b": {"R"}, "c": {"R"}}
