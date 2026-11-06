@@ -1,6 +1,6 @@
 """Membandingkan parser dan baseline regex terhadap ground truth.
 
-    python evaluate.py                       # memakai data/ground_truth.csv
+    python evaluate.py # memakai data/ground_truth.csv
     python evaluate.py --truth path/lain.csv
 
 Satuan yang dibandingkan adalah triple (file, baris, tabel, operasi).
