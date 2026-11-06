@@ -149,3 +149,20 @@ def test_regresi_subquery_di_update_adalah_read():
     script = parse_sql("UPDATE a SET x = (SELECT MAX(y) FROM b) "
                        "WHERE id IN (SELECT id FROM c)")
     assert analyze_statement(script.statements[0]) == {"a": {"U"}, "b": {"R"}, "c": {"R"}}
+
+def test_tepi_insert_values_dengan_kolom_tanpa_scope_tidak_crash():
+    # INSERT tidak membuat scope, jadi self.scope == None. T2 yang langsung
+    # memakai self.scope.entries akan melempar AttributeError.
+    script, diags, _ = resolve("INSERT INTO t (a) VALUES (b)")
+    assert kolom(script)[0].resolved is None
+    assert [d.level for d in diags] == ["warning"]
+
+
+def test_tepi_subquery_di_from_tidak_melihat_tabel_saudara():
+    _, diags, _ = resolve("SELECT p.id FROM pelanggan p, (SELECT p.id FROM pesanan o) d")
+    assert [d.level for d in diags] == ["error"] and "'p'" in diags[0].message
+
+
+def test_tepi_update_membaca_tabel_yang_sama_gabungan_ru():
+    script = parse_sql("UPDATE a SET x = 1 WHERE id IN (SELECT id FROM a)")
+    assert analyze_statement(script.statements[0]) == {"a": {"U", "R"}}
