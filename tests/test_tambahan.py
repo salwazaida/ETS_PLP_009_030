@@ -159,10 +159,17 @@ def test_tepi_insert_values_dengan_kolom_tanpa_scope_tidak_crash():
 
 
 def test_tepi_subquery_di_from_tidak_melihat_tabel_saudara():
+    #spek 4.4 mengatur bahwa subquery di FROM di-resolve
+    # SEBELUM scope SELECT yang memuatnya dibuat. Karena itu alias 'p' tidak boleh terlihat di dalam subquery 'd'.
+    # Kalau urutannya tertukar (scope dibuat dulu), 'p' akan ter-resolve dan error hilang, seolah-olah subquery boleh berkorelasi
+    # dengan tabel saudaranya.
     _, diags, _ = resolve("SELECT p.id FROM pelanggan p, (SELECT p.id FROM pesanan o) d")
     assert [d.level for d in diags] == ["error"] and "'p'" in diags[0].message
 
 
 def test_tepi_update_membaca_tabel_yang_sama_gabungan_ru():
+    # satu tabel bisa punya lebih dari satu operasi dalam satu
+    # statement.'a' adalah target UPDATE (U) sekaligus dibaca lewat subquery (R, spek bagian 5). Implementasi yang menyimpan satu operasi per
+    # tabel akan menimpa salah satunya dan kehilangan R atau U.
     script = parse_sql("UPDATE a SET x = 1 WHERE id IN (SELECT id FROM a)")
     assert analyze_statement(script.statements[0]) == {"a": {"U", "R"}}
