@@ -138,3 +138,9 @@ def test_regresi_shadowing_alias_subquery_menutupi_alias_luar():
     assert {c.resolved for c in dalam} == {"pesanan"}
     assert {c.resolved for c in kolom(script) if c.name == "id"} == {"pelanggan"}
     assert diags == []
+
+def test_regresi_scope_delete_tidak_bocor_ke_statement_berikutnya():
+    script, diags, resolver = resolve(
+        "DELETE FROM sesi s WHERE s.id = 1; SELECT s.id FROM pengguna u")
+    assert resolver.scope is None
+    assert [d.level for d in diags] == ["error"] and "'s'" in diags[0].message
