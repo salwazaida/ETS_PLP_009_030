@@ -38,7 +38,7 @@ kecil adalah tugas parser). Alternatif yang ditolak: mengubah `KEYWORDS` menjadi
 **Test regresi.** `test_regresi_keyword_tidak_peka_huruf` dan
 `test_regresi_ident_berawalan_keyword_tetap_ident` di `tests/test_tambahan.py`.
 
-**Peran AI.** AI menunjukkan lokasi masalah dan memberi kode perbaikan. Diverifikasi dengan
+**Peran AI.** AI menunjukkan lokasi masalah dan membantu menyusun kode perbaikan. Diverifikasi dengan
 menulis test yang gagal sebelum perbaikan dan lulus sesudahnya, serta menjalankan seluruh test.
 
 ---
@@ -69,7 +69,7 @@ yang menghasilkan `<>`. Alternatif yang ditolak: menggabungkan `<` dan `>` di pa
 
 **Test regresi.** `test_regresi_operator_tidak_sama_satu_token`.
 
-**Peran AI.** AI membantu menghubungkan kegagalan `test_matrix_laporan_penjualan` ke baris 6
+**Peran AI.** AI membantu memverifikasi kegagalan `test_matrix_laporan_penjualan` ke baris 6
 data uji dan memberi kode perbaikan. Diverifikasi lewat test baru dan seluruh test.
 
 ---
@@ -119,5 +119,110 @@ nomor baris dan kolom tetap benar.
 
 **Test.** `test_komentar_blok_lintas_baris_dan_nomor_baris`,
 `test_komentar_blok_boleh_berisi_bintang`, `test_komentar_blok_tidak_ditutup_adalah_lexerror`.
+
+---
+
+## Fitur dilengkapi (bukan bug): TODO(T1) INSERT ... SELECT
+
+**Gejala.** `INSERT INTO arsip (id) SELECT id FROM pesanan` ditolak dengan
+`INSERT ... SELECT belum didukung`. SPESIFIKASI.md bagian 3 dan 5 mewajibkan bentuk ini; tabel
+target `C`, tabel sumber `R`. `test_insert_select` gagal, dan `laporan_penjualan.sql` baris 10
+gagal di-parse.
+
+**Akar masalah.** (DRAFT) Cabang `SELECT` di `_insert` sengaja dibiarkan melempar error.
+Grammar `insert_stmt` punya dua alternatif setelah daftar kolom: `VALUES ...` atau `select_stmt`.
+Karena `select_stmt` sudah punya fungsi sendiri, cukup dipanggil dari `_insert` (rekursi
+antar aturan, Bab 6).
+
+**Perbaikan.** `crud/parser.py`, `_insert`: panggil `self._select()` dan kembalikan
+`ast.Insert(table, columns, [], query)`.
+
+**Test regresi.** `test_regresi_insert_select_menghasilkan_query`.
+
+---
+
+## Bug 4: AND dan OR memiliki presedensi yang sama
+
+**Ditemukan oleh:** Fathimah · **Diperbaiki oleh:** Fathimah
+
+**Gejala.** `a = 1 OR b = 2 AND c = 3` terbaca `(a = 1 OR b = 2) AND c = 3`; akar pohon AST
+adalah `AND`. SPESIFIKASI.md 3.1 menyatakan `OR` presedensi terendah dan `AND` lebih tinggi,
+sehingga seharusnya `a = 1 OR (b = 2 AND c = 3)`. Statement pertama `audit.sql` menguji ini.
+
+**Reproduksi minimal.**
+
+```sql
+SELECT a FROM t WHERE a = 1 OR b = 2 AND c = 3
+```
+
+**Akar masalah.** (DRAFT) Grammar memisahkan `or_expr` dan `and_expr` menjadi dua tingkat,
+tetapi `_logical` menggabungkannya dalam satu loop `while ... in ("AND", "OR")`. Pada recursive
+descent (Bab 6), presedensi dibentuk oleh jumlah fungsi bertingkat: operator yang lebih
+rendah dipanggil lebih dulu dan memanggil operator yang lebih tinggi untuk operandnya. Satu
+fungsi untuk dua operator membuat keduanya berasosiasi kiri pada tingkat yang sama.
+
+**Perbaikan.** `crud/parser.py`: `_logical` hanya menangani `OR` dan memanggil fungsi baru
+`_and` untuk operandnya; `_and` menangani `AND` dan memanggil `_not`. Alternatif yang ditolak:
+precedence climbing dengan tabel presedensi, karena mengubah gaya parser dan tidak sesuai
+struktur grammar.
+
+**Test regresi.** `test_regresi_presedensi_or_lebih_rendah_dari_and`.
+
+**Peran AI.** AI membantu menelusuri bahwa `_logical` menggabungkan dua tingkat.
+Diverifikasi dengan test yang gagal dulu (`'AND' == 'OR'`) lalu lulus.
+
+---
+
+## Bug 5: Error recovery membuang seluruh sisa file
+
+**Ditemukan oleh:** Fathimah · **Diperbaiki oleh:** Fathimah
+
+**Gejala.** Setelah satu statement rusak, semua statement valid sesudahnya tidak diproses.
+SPESIFIKASI.md bagian 6: buang token sampai dan termasuk `;` berikutnya, lalu lanjutkan.
+
+**Reproduksi minimal.**
+
+```sql
+SELECT FROM x; SELECT a FROM t;
+```
+
+**Akar masalah.** (DRAFT) `_synchronize` mengulang `_advance()` sampai akhir input, bukan
+berhenti di titik aman. Pada *panic mode* (Bab 6), parser membuang token sampai batas
+statement lalu melanjutkan agar error berikutnya tetap terlaporkan. Di SQL, batas itu adalah `;`.
+
+**Perbaikan.** `crud/parser.py`, `_synchronize`: berhenti setelah mengonsumsi token
+`SEMICOLON`.
+
+**Test regresi.** `test_regresi_error_recovery_sampai_titik_koma`,
+`test_tepi_satu_error_per_statement_rusak`.
+
+**Peran AI.** AI membantu menelusuri bagian fungsi yang membuang semua token.
+Diverifikasi dengan test (`1 == 2` sebelum perbaikan).
+
+---
+
+## Bug 6: LEFT OUTER JOIN tidak diterima
+
+**Ditemukan oleh:** Fathimah · **Diperbaiki oleh:** Fathimah
+
+**Gejala.** `LEFT OUTER JOIN` menghasilkan `diharapkan JOIN, ditemukan 'OUTER'`. Grammar
+bagian 3: `join = [ "INNER" | "LEFT" [ "OUTER" ] ] "JOIN" ...`.
+
+**Reproduksi minimal.**
+
+```sql
+SELECT a FROM t LEFT OUTER JOIN u ON t.id = u.id
+```
+
+**Akar masalah.** (DRAFT) `_join` tidak mengimplementasikan bagian opsional `[ "OUTER" ]`.
+Pada parser recursive descent (Bab 6), setiap bagian opsional di grammar harus punya
+pemeriksaan `match` sendiri; fungsi yang menerima lebih sedikit dari grammar menolak input yang
+sah.
+
+**Perbaikan.** `crud/parser.py`, `_join`: setelah `LEFT`, panggil `self._match_kw("OUTER")`.
+
+**Test regresi.** `test_regresi_left_outer_join`.
+
+**Peran AI.** AI membandingkan `_join` dengan grammar.
 
 ---
