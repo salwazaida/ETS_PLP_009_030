@@ -50,6 +50,62 @@ Catat setiap penggunaan AI atau coding agent yang memengaruhi kode atau laporan.
   Hasil:  
   Verifikasi: 
 
+- Siapa: Salwa. Tugas: memahami panduan unutk mengerjakan.
+  Hasil: diterima sebagai panduan.
+  Alasan: butuh peta tugas agar tidak melenceng kemana-mana.
+
+- Siapa: Salwa. Tugas: memverifikasi bug di resolver, analyzer, pipeline, dan cli dengan membandingkan kode dengan SPESIFIKASI.md.
+  Hasil: diterima. AI berhsil memverifikasi bug yan ditemukan.
+  Alasan: membandingkan kode dengan spek baris demi baris, dan test terlihat hanya menangkap sebagian masalah.
+  Verifikasi: gejalanya dikonfirmasi sendiri lewat `--ast` baris 12 dan 18 pada `audit.sql`, FP/FN pada `evaluate.py`, nilai `RUD` (seharusnya `RD`) pada pytest.
+
+- Siapa: Salwa. Tugas: membantu menyelesaikan kolom tanpa qualifier di `resolver.py`.
+  Hasil: diterima.
+  Alasan: aturannya jelas di spek 4.3 dan kolom ini perlu di-resolve ke tabel.
+  Verifikasi: `test_kolom_tanpa_qualifier_satu_tabel` lulus dan seluruh `test_resolver.py` hijau.
+
+- Siapa: Salwa. Tugas: verifikasi penambahan `self._pop()` di akhir `_delete` pada `resolver.py`.
+  Hasil: diterima.
+  Alasan: sesuai SPESIFIKASI.md 4.5 (scope tidak boleh bocor antar statement).
+  Verifikasi: `python -m crud.cli data\sample\audit.sql` sekarang menampilkan `audit.sql: baris 18: error: alias 's' tidak terdefinisi` (sebelumnya tidak ada error). serta sebelumnya test gagal tanpa `_pop`.
+
+- Siapa: Salwa. Tugas: apakah 2 pemanggilan `_collect` di cabang `Update` pada `analyzer.py` diubah dari `"U"` menjadi `"R"`.
+  Hasil: diterima.
+  Alasan: sesuai SPESIFIKASI.md bagian 5 (tabel yang dibaca lewat subquery selalu `R`).
+  Verifikasi: `test_matrix_laporan_penjualan` lulus, `evaluate.py` menunjukkan parser 1.00 (sebelumnya 0.90 dengan FP/FN di baris 12).
+
+- Siapa: Salwa. Tugas: `tests/test_tambahan.py`.
+  Hasil: diterima.
+  Alasan: syarat tugas, test regresi untuk setiap bug.
+  Verifikasi: ketiganya lulus setelah perbaikan. 
+
+- Siapa: Salwa. Tugas: memberi komentar di `tests/test_tambahan.py` (INSERT dengan kolom tanpa scope, subquery di FROM tidak melihat tabel saudara, UPDATE yang membaca tabel yang sama jadi `RU`).
+  Hasil: diubah.
+  Alasan: mencari kasus berisiko di luar bug yang sudah ditemukan.
+  Verifikasi: hasil `python -m pytest -k tepi -v` (semua passed).
+
+- Siapa: Salwa. Tugas: label manual `pemeliharaan.sql` untuk `data/ground_truth.csv`.
+  Hasil: diterima.
+  Alasan: belum paham cara menentukan peran tabel (target atau sumber baca) pada INSERT...SELECT dan subquery.
+  Verifikasi: dibaca terhadap spek bagian 5, `evaluate.py` menunjukkan parser 1.00.
+
+- Siapa: Salwa. Tugas: menganalisis daftar FP/FN regex pada `evaluate.py`.
+  Hasil: diterima.
+  Alasan: butuh bantuan menghubungkan setiap FP/FN dengan kode `regex_extractor.py`.
+  Verifikasi: potongan SQL di laporan sudah disalin.
+
+- Siapa: Salwa. Tugas: memeriksa apakah semua saran AI melanggar SPESIFIKASI.md atau aturan yang ada.
+  Hasil: diterima.
+  Alasan: ingin memastikan tidak ada pelanggaran sebelum mengumpulkan.
+  Verifikasi: dibandingkan dengan aturan di deskripsi tugas dan menindaklanjuti dengan mencatat label di log ini.
+
+- Siapa: Salwa. Tugas: menyelesaikan masalah lingkungan (konflik `git pull` karena file `.pyc`, `IndentationError` di `test_tambahan.py`, `audit.sql` yang terbaca berisi teks CSV, perintah PowerShell yang gagal).
+  Hasil: diterima. 
+  Alasan: sempat gagal/error.
+  Verifikasi: perintah berhasil dan keluaran terminal sesuai harapan.
+
+**Refleksi.** AI membantu membandingkan kode dengan SPESIFIKASI.md secara sistematis. AI juga keliru di beberapa hal. kami mengetahuinya dengan mencocokkan dengan spesifikasi tugas dan membaca pesan error di terminal.
+
 **Refleksi.** AI membantu menunjukkan lokasi bug dan menghubungkan satu gejala di parser ke penyebabnya di lexer (`<>`). 
 AI sempat keliru menyebut `test_tambahan.py` sudah punya fungsi helper, padahal tidak, dan kami mengetahuinya karena test gagal lalu kami memeriksa isi file.
 Semua hasil bantuan AI kami verifikasi dengan test dan tidak dipakai tanpa dijalankan.
