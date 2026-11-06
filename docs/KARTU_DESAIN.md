@@ -1,18 +1,5 @@
 # Kartu Desain
 
-Tuliskan lima keputusan desain penting dalam pekerjaan kalian. Untuk tiap keputusan, sebutkan
-alternatif yang ditolak dan alasannya. Contoh topik (boleh memilih yang lain):
-
-- bagaimana parser membedakan `*` sebagai "semua kolom" dan sebagai perkalian;
-- di mana dan bagaimana presedensi `AND`/`OR` dinyatakan;
-- mengapa error recovery berhenti di `;`, bukan di keyword `SELECT` berikutnya;
-- urutan pencarian scope dan akibatnya pada shadowing serta correlated subquery;
-- mengapa kolom tanpa qualifier hanya dilihat di scope terdalam, dan apa kelemahannya;
-- bagaimana implementasi `INSERT ... SELECT` atau komentar blok kalian.
-
-| No | Keputusan | Alternatif yang ditolak | Alasan |
-| --- | --- | --- | --- |
-
 Lima keputusan desain penting beserta alternatif yang ditolak dan alasannya.
 Keputusan 1 dan 2 oleh Fathimah (lexer dan parser). Keputusan 3 sampai 5 oleh Salwa (resolver dan analyzer).
 
@@ -42,7 +29,7 @@ Kelemahan: tool tidak bisa menampilkan komentar (misalnya untuk dokumentasi).
 - **Keputusan.** Setiap `SELECT` (termasuk subquery), `UPDATE`, dan `DELETE` membuka scope baru lewat `_push`, dan menutupnya lewat `_pop` di akhir. Tiap scope menyimpan peta alias ke tabel dan menunjuk scope sebelumnya sebagai induk. Alias ber-qualifier dicari dari scope terdalam naik ke luar dan berhenti di yang pertama ketemu. Kolom tanpa qualifier hanya dilihat di scope terdalam.
 - **Alternatif yang ditolak.** (a) Satu kamus alias datar untuk seluruh statement tanpa scope bersarang. (b) Mencari alias dari scope terluar (perilaku kode awal). (c) Mencari kolom tanpa qualifier juga ke scope luar bila tidak ketemu.
 - **Alasan.** (a) Tidak bisa menyatakan dua alias bernama sama di tingkat berbeda, misalnya alias `x` di luar dan di subquery pada `audit.sql` baris 12, dan tidak bisa menyatakan correlated subquery yang boleh mengacu alias luar (spesifikasi 4.3). (b) Alias luar mengalahkan alias dalam, melanggar shadowing, dan itulah Bug 1. (c) Tanpa skema database, menebak kolom milik tabel luar bisa menautkan ke tabel yang salah, jadi aturan spesifikasi memilih tidak menelusur dan cukup memberi warning. Pasangan `_push` dan `_pop` yang selalu seimbang menjaga aturan 4.5: setiap statement berdiri sendiri.
-- **Kelemahan.** Satu `_pop` yang hilang membuat scope bocor ke statement berikutnya (terbukti pada `_delete`, Bug 2). Kolom tanpa qualifier yang sebenarnya milik tabel luar di correlated subquery tidak ter-resolve, dan kolom tanpa qualifier pada scope berisi lebih dari satu tabel selalu ambigu karena tidak ada skema untuk membedakannya.
+- **Kelemahan.** Satu `_pop` yang hilang membuat scope bocor ke statement berikutnya (terbukti pada `_delete`, Bug 8). Kolom tanpa qualifier yang sebenarnya milik tabel luar di correlated subquery tidak ter-resolve, dan kolom tanpa qualifier pada scope berisi lebih dari satu tabel selalu ambigu karena tidak ada skema untuk membedakannya.
 
 ## Keputusan 5 (Salwa): analyzer bekerja di atas AST, tanpa regex
 

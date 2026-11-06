@@ -104,8 +104,4 @@ Catat setiap penggunaan AI atau coding agent yang memengaruhi kode atau laporan.
   Alasan: sempat gagal/error.
   Verifikasi: perintah berhasil dan keluaran terminal sesuai harapan.
 
-**Refleksi.** AI membantu membandingkan kode dengan SPESIFIKASI.md secara sistematis. AI juga keliru di beberapa hal. kami mengetahuinya dengan mencocokkan dengan spesifikasi tugas dan membaca pesan error di terminal.
-
-**Refleksi.** AI membantu menunjukkan lokasi bug dan menghubungkan satu gejala di parser ke penyebabnya di lexer (`<>`). 
-AI sempat keliru menyebut `test_tambahan.py` sudah punya fungsi helper, padahal tidak, dan kami mengetahuinya karena test gagal lalu kami memeriksa isi file.
-Semua hasil bantuan AI kami verifikasi dengan test dan tidak dipakai tanpa dijalankan.
+**Refleksi.** AI membantu membandingkan kode dengan SPESIFIKASI.md secara sistematis, memverifikasi lokasi bug, dan menghubungkan satu gejala di parser ke penyebabnya di lexer (`<>`). AI juga keliru di beberapa hal, misalnya sempat menyebut `test_tambahan.py` sudah punya fungsi helper padahal tidak. Kami mengetahuinya dengan menjalankan test, membaca pesan error di terminal, dan mencocokkan dengan spesifikasi tugas.
