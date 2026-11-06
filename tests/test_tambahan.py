@@ -128,4 +128,13 @@ def test_tepi_perbandingan_tidak_berantai():
 def test_tepi_satu_error_per_statement_rusak():
     # statement rusak menghasilkan tepat satu error, statement valid sesudahnya tetap diproses
     sc = parse_sql("SELECT a b c FROM t; SELECT 1 FROM x")
-    assert len(sc.errors) == 1 and len(sc.statements) == 1    
+    assert len(sc.errors) == 1 and len(sc.statements) == 1   
+
+def test_regresi_shadowing_alias_subquery_menutupi_alias_luar():
+    script, diags, _ = resolve(
+        "SELECT x.id FROM pelanggan x "
+        "WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x WHERE x.total > 5)")
+    dalam = [c for c in kolom(script) if c.name in ("pelanggan_id", "total")]
+    assert {c.resolved for c in dalam} == {"pesanan"}
+    assert {c.resolved for c in kolom(script) if c.name == "id"} == {"pelanggan"}
+    assert diags == []

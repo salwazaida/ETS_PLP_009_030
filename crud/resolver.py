@@ -84,17 +84,13 @@ class Resolver:
         else:
             self._declare(source.alias, None, source.line)
 
-    def _lookup(self, name: str) -> ScopeEntry | None:
-        """Cari nama di rantai scope."""
-        chain = []
-        scope = self.scope
-        while scope is not None:
-            chain.append(scope)
-            scope = scope.parent
-        for scope in reversed(chain):
-            if name in scope.entries:
-                return scope.entries[name]
-        return None
+    def _lookup(self, name):
+       scope = self.scope
+       while scope is not None:
+           if name in scope.entries:
+               return scope.entries[name]
+           scope = scope.parent
+       return None
 
     # ---- statement ------------------------------------------------------
     def _select(self, sel: ast.Select) -> None:
