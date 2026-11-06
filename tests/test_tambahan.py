@@ -9,6 +9,26 @@ import pytest
 
 from crud.lexer import LexError, TokenType as T, tokenize
 from crud.parser import parse_sql
+from crud import ast_nodes as ast
+from crud.analyzer import analyze_statement
+from crud.resolver import Resolver
+
+
+def resolve(sql):
+    script = parse_sql(sql)
+    assert script.errors == [], script.errors
+    resolver = Resolver()
+    return script, resolver.resolve_script(script), resolver
+
+
+def kolom(node):
+    return [n for n in ast.iter_nodes(node) if isinstance(n, ast.ColumnRef)]
+
+
+def test_regresi_kolom_tanpa_qualifier_dua_tabel_ambigu():
+    script, diags, _ = resolve("SELECT id FROM a, b")
+    assert kolom(script)[0].resolved is None
+    assert [d.level for d in diags] == ["warning"] and "ambigu" in diags[0].message
 
 def test_regresi_keyword_tidak_peka_huruf():
     # Bug 1: keyword huruf kecil/campuran terbaca IDENT (SPESIFIKASI 2.2)
@@ -108,4 +128,41 @@ def test_tepi_perbandingan_tidak_berantai():
 def test_tepi_satu_error_per_statement_rusak():
     # statement rusak menghasilkan tepat satu error, statement valid sesudahnya tetap diproses
     sc = parse_sql("SELECT a b c FROM t; SELECT 1 FROM x")
-    assert len(sc.errors) == 1 and len(sc.statements) == 1    
+    assert len(sc.errors) == 1 and len(sc.statements) == 1   
+
+def test_regresi_shadowing_alias_subquery_menutupi_alias_luar():
+    script, diags, _ = resolve(
+        "SELECT x.id FROM pelanggan x "
+        "WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x WHERE x.total > 5)")
+    dalam = [c for c in kolom(script) if c.name in ("pelanggan_id", "total")]
+    assert {c.resolved for c in dalam} == {"pesanan"}
+    assert {c.resolved for c in kolom(script) if c.name == "id"} == {"pelanggan"}
+    assert diags == []
+
+def test_regresi_scope_delete_tidak_bocor_ke_statement_berikutnya():
+    script, diags, resolver = resolve(
+        "DELETE FROM sesi s WHERE s.id = 1; SELECT s.id FROM pengguna u")
+    assert resolver.scope is None
+    assert [d.level for d in diags] == ["error"] and "'s'" in diags[0].message
+
+def test_regresi_subquery_di_update_adalah_read():
+    script = parse_sql("UPDATE a SET x = (SELECT MAX(y) FROM b) "
+                       "WHERE id IN (SELECT id FROM c)")
+    assert analyze_statement(script.statements[0]) == {"a": {"U"}, "b": {"R"}, "c": {"R"}}
+
+def test_tepi_insert_values_dengan_kolom_tanpa_scope_tidak_crash():
+    # INSERT tidak membuat scope, jadi self.scope == None. T2 yang langsung
+    # memakai self.scope.entries akan melempar AttributeError.
+    script, diags, _ = resolve("INSERT INTO t (a) VALUES (b)")
+    assert kolom(script)[0].resolved is None
+    assert [d.level for d in diags] == ["warning"]
+
+
+def test_tepi_subquery_di_from_tidak_melihat_tabel_saudara():
+    _, diags, _ = resolve("SELECT p.id FROM pelanggan p, (SELECT p.id FROM pesanan o) d")
+    assert [d.level for d in diags] == ["error"] and "'p'" in diags[0].message
+
+
+def test_tepi_update_membaca_tabel_yang_sama_gabungan_ru():
+    script = parse_sql("UPDATE a SET x = 1 WHERE id IN (SELECT id FROM a)")
+    assert analyze_statement(script.statements[0]) == {"a": {"U", "R"}}
