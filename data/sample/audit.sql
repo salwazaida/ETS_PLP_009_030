@@ -1,21 +1,21 @@
--- Audit akses data
-SELECT p.id, p.nama
-FROM pelanggan p, pesanan o
-WHERE o.pelanggan_id = p.id
-  AND o.tanggal BETWEEN :mulai AND :akhir
-  OR p.level = 'gold' AND p.aktif = 1;
-
-SELECT p.nama
-FROM pelanggan p
-WHERE EXISTS (SELECT 1 FROM pembayaran b WHERE b.pelanggan_id = p.id AND b.status = 'GAGAL');
-
-SELECT x.id
-FROM pelanggan x
-WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x WHERE x.total > 500000);
-
-DELETE FROM sesi s WHERE s.kedaluwarsa < :sekarang;
-
-SELECT s.id FROM pengguna u WHERE u.aktif = 1;
-
-UPDATE pesanan SET status = 'BATAL'
-WHERE pelanggan_id IN (SELECT id FROM pelanggan WHERE diblokir = 1);
+file,baris,tabel,operasi
+campuran_error.sql,2,pelanggan,R
+campuran_error.sql,6,produk,U
+campuran_error.sql,8,keranjang,D
+laporan_penjualan.sql,3,pelanggan,R
+laporan_penjualan.sql,3,pesanan,R
+laporan_penjualan.sql,9,arsip_pesanan,C
+laporan_penjualan.sql,9,pesanan,R
+laporan_penjualan.sql,12,pelanggan,U
+laporan_penjualan.sql,12,pesanan,R
+laporan_penjualan.sql,15,pesanan,D
+audit.sql,2,pelanggan,R
+audit.sql,2,pesanan,R
+audit.sql,8,pelanggan,R
+audit.sql,8,pembayaran,R
+audit.sql,12,pelanggan,R
+audit.sql,12,pesanan,R
+audit.sql,16,sesi,D
+audit.sql,18,pengguna,R
+audit.sql,20,pesanan,U
+audit.sql,20,pelanggan,R
