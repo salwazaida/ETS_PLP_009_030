@@ -217,7 +217,13 @@ WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x WHERE x.total > 5);
 
 **Perbaikan.** `crud/resolver.py`, fungsi `_lookup`: mulai dari `self.scope`, periksa, lalu naik ke `parent` sampai ketemu atau habis. Alternatif yang dipertimbangkan: tetap membangun daftar lalu mengiterasinya tanpa `reversed`. Hasilnya sama, tetapi lebih panjang dan tidak perlu.
 
-**Test regresi.** `test_regresi_shadowing_alias_subquery_menutupi_alias_luar` di `tests/test_tambahan.py`. Lulus setelah perbaikan (terlihat `1 passed`).
+**Test regresi.** `test_regresi_shadowing_alias_subquery_menutupi_alias_luar` di `tests/test_tambahan.py`. test ditulis dulu, dan terbukti gagal pada kode lama:
+
+​```text
+--ast baris 12: x.pelanggan_id -> pelanggan dan x.total -> pelanggan
+​```
+
+Setelah `_lookup` diperbaiki, test yang sama **passed**, dan seluruh `pytest` tetap hijau.
 
 **Peran AI.** AI memberi usulan perbaikan serta test.
 
@@ -240,7 +246,7 @@ SELECT s.id FROM pengguna u;
 
 **Perbaikan.** `crud/resolver.py`, fungsi `_delete`: tambahkan `self._pop()` di akhir. Alternatif yang dipertimbangkan: mengosongkan `self.scope` di awal tiap statement dalam `resolve_script`. Tidak memilih itu karena itu menyembunyikan kebocoran, bukan malah memperbaikinya; pasangan push dan pop yang benar menjaga invarian di tempat kerusakannya terjadi.
 
-**Test regresi.** `test_regresi_scope_delete_tidak_bocor_ke_statement_berikutnya` di `tests/test_tambahan.py`. Lulus setelah perbaikan.
+**Test regresi.** `test_regresi_scope_delete_tidak_bocor_ke_statement_berikutnya` di `tests/test_tambahan.py`. dan ketika dijalankan gagal, Setelah `self._pop()` ditambahkan di `_delete`, test yang sama **passed**. Pada tingkat CLI, sebelum perbaikan `--ast` untuk `audit.sql` baris 18 menampilkan `s.id -> sesi` tanpa diagnostik. Sesudah perbaikan, `python -m crud.cli data\sample\audit.sql` menampilkan `audit.sql: baris 18: error: alias 's' tidak terdefinisi`.
 
 **Peran AI.** AI memverifikasi bug yang ditemukan.
 
@@ -262,7 +268,7 @@ UPDATE a SET x = (SELECT MAX(y) FROM b) WHERE id IN (SELECT id FROM c);
 
 **Perbaikan.** `crud/analyzer.py`, fungsi `analyze_statement`, cabang `ast.Update`: dua pemanggilan `_collect(..., "U")` (untuk nilai `SET` dan `WHERE`) diubah menjadi `"R"`. Tabel target tetap `U`. Alternatifnya dengan menambah parameter peran per jenis statement. Tidak dipilih karena `op` sudah ada dan perubahan minimal cukup.
 
-**Test regresi.** `test_regresi_subquery_di_update_adalah_read`. `test_matrix_laporan_penjualan` juga passed.
+**Test regresi.** `test_regresi_subquery_di_update_adalah_read`. ketika dijalankan pertama terhadap kode awal outputnya gagal, Setelah dua pemanggilan `_collect` di cabang `Update` diubah menjadi `"R"`, test yang sama **passed**. Test awal `test_matrix_laporan_penjualan` juga gagal sebelum perbaikan (`pesanan` bernilai `RUD`, seharusnya `RD`) dan lulus sesudahnya. Pada `evaluate.py`, FP `('laporan_penjualan.sql', 12, 'pesanan', 'U')` dan FN `('laporan_penjualan.sql', 12, 'pesanan', 'R')` tidak muncul lagi. Parser sebelumnya 0.90 pada 10 triple (dua file berlabel) dan sesudahnya 1.00 pada 27 triple (tiga file berlabel).
 
 **Peran AI.** AI memverifikasi bug yang ditemukan.
 
