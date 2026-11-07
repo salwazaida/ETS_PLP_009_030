@@ -99,7 +99,7 @@ Catat setiap penggunaan AI atau coding agent yang memengaruhi kode atau laporan.
   Alasan: ingin memastikan tidak ada pelanggaran sebelum mengumpulkan.
   Verifikasi: dibandingkan dengan aturan di deskripsi tugas dan menindaklanjuti dengan mencatat label di log ini.
 
-- Siapa: Salwa. Tugas: menyelesaikan masalah lingkungan (konflik `git pull` karena file `.pyc`, `IndentationError` di `test_tambahan.py`, `audit.sql` yang terbaca berisi teks CSV, perintah PowerShell yang gagal).
+- Siapa: Salwa. Tugas: menyelesaikan masalah lingkungan (konflik `git pull` karena file `.pyc`, `IndentationError` di `test_tambahan.py`).
   Hasil: diterima. 
   Alasan: sempat gagal/error.
   Verifikasi: perintah berhasil dan keluaran terminal sesuai harapan.
