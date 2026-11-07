@@ -1,4 +1,4 @@
-# Spesifikasi Ekstraktor CRUD Matrix (tidak diubah)
+# Spesifikasi Ekstraktor CRUD Matrix
 
 Dokumen ini adalah acuan kebenaran. Test tersembunyi disusun berdasarkan dokumen ini.
 
